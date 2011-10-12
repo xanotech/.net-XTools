@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Xanotech.Tools")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Xanotech LLC")]
 [assembly: AssemblyProduct("Xanotech.Tools")]
 [assembly: AssemblyCopyright("Copyright © 2011")]
 [assembly: AssemblyTrademark("")]

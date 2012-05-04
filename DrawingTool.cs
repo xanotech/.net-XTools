@@ -14,10 +14,10 @@ namespace Xanotech.Tools {
                         return icon.ToBitmap();
                 } catch {
                     // Figure it out later
-                } // End try-catch
-            } // End try-catch
+                } // end try-catch
+            } // end try-catch
             return null;
-        } // End method
+        } // end method
 
 
 
@@ -31,7 +31,7 @@ namespace Xanotech.Tools {
 
             using (img)
                 return img.Resize(width, height);
-        } // End method
+        } // end method
 
 
 
@@ -40,9 +40,9 @@ namespace Xanotech.Tools {
             using (var g = Graphics.FromImage(newImage)) {
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 g.DrawImage(img, 0, 0, width, height);
-            } // End using
+            } // end using
             return newImage;
-        } // End method
+        } // end method
 
 
 
@@ -50,8 +50,8 @@ namespace Xanotech.Tools {
             using (var bmp = new Bitmap(img)) {
                 var ptr = bmp.GetHicon();
                 return Icon.FromHandle(ptr);
-            } // End using
-        } // End method
+            } // end using
+        } // end method
 
-    } // End class
-} // End namespace
+    } // end class
+} // end namespace

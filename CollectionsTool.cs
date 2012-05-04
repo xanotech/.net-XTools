@@ -25,10 +25,10 @@ namespace Xanotech.Tools {
                 else if (splitVal[sv][0] == 'e')
                     result.Append('=' + splitVal[sv].Substring(1));
                 else result.Append(splitVal[sv]);
-            } // End for
+            } // end for
 
             return result.ToString();
-        } // End method
+        } // end method
 
 
 
@@ -42,7 +42,7 @@ namespace Xanotech.Tools {
             str = str.Replace("=", "&e");
 
             return str;
-        } // End method
+        } // end method
 
 
 
@@ -62,11 +62,11 @@ namespace Xanotech.Tools {
                     if (index < line.Length)
                         newValue = Decode(line.Substring(index + 1));
                     dict[newKey] = newValue;
-                } // End if
-            } // End while
+                } // end if
+            } // end while
 
             return dict;
-        } // End method
+        } // end method
 
 
 
@@ -78,7 +78,7 @@ namespace Xanotech.Tools {
                 dict.Read(reader);
 
             return dict;
-        } // End method
+        } // end method
 
 
 
@@ -87,9 +87,9 @@ namespace Xanotech.Tools {
                 string line = Encode(entry.Key) + "=" +
                     Encode(entry.Value) + "\n";
                 writer.Write(line);
-            } // End foreach
+            } // end foreach
             writer.Flush();
-        } // End method
+        } // end method
 
 
 
@@ -99,7 +99,7 @@ namespace Xanotech.Tools {
 
             using (var writer = new StreamWriter(filename))
                 dict.Write(writer);
-        } // End method
+        } // end method
 
-    } // End class
-} // End namespace
+    } // end class
+} // end namespace

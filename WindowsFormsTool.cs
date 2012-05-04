@@ -9,7 +9,7 @@ namespace Xanotech.Tools {
                 control.Invoke(action);
             else
                 action();
-        } // End method
+        } // end method
 
 
 
@@ -18,7 +18,7 @@ namespace Xanotech.Tools {
                 return (T)control.Invoke(func);
             else
                 return func();
-        } // End method
+        } // end method
 
-    } // End class
-} // End namespace
+    } // end class
+} // end namespace

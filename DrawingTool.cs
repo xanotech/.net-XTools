@@ -1,13 +1,20 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 
 namespace Xanotech.Tools {
     public static class DrawingTool {
 
         public static Image Read(string filename) {
+            var extension = Path.GetExtension(filename);
+            if (extension.Is(".exe"))
+                using (var icon = Icon.ExtractAssociatedIcon(filename))
+                    return icon.ToBitmap();
+
             try {
-                return Image.FromFile(filename);
+                using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
+                    return Image.FromStream(stream);
             } catch (ArgumentException) {
                 try {
                     using (var icon = new Icon(filename))

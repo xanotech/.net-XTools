@@ -6,6 +6,17 @@ using System.IO;
 namespace Xanotech.Tools {
     public static class CollectionsTool {
 
+        public static void AddRange<T>(this IList<T> ilist, IEnumerable<T> items) {
+            List<T> list = ilist as List<T>;
+            if (list != null)
+                list.AddRange(items);
+            else
+                foreach (T item in items)
+                    ilist.Add(item);
+        } // end method
+
+
+
         private static string Decode(string val) {
             if (val == null) return "";
 
@@ -78,6 +89,47 @@ namespace Xanotech.Tools {
                 dict.Read(reader);
 
             return dict;
+        } // end method
+
+
+
+        public static void Sort<T>(this IList<T> ilist) {
+            SortIList(ilist, new Action<List<T>>(l => l.Sort()));
+        } // end method
+
+
+
+        public static void Sort<T>(this IList<T> ilist, Comparison<T> comparison) {
+            SortIList(ilist, new Action<List<T>>(l => l.Sort(comparison)));
+        } // end method
+
+
+
+        public static void Sort<T>(this IList<T> ilist, IComparer<T> comparer) {
+            SortIList(ilist, new Action<List<T>>(l => l.Sort(comparer)));
+        } // end method
+
+
+
+        public static void Sort<T>(this IList<T> ilist,
+            int index, int count, IComparer<T> comparer) {
+            SortIList(ilist, new Action<List<T>>(l => l.Sort(index, count, comparer)));
+        } // end method
+
+
+
+        private static void SortIList<T>(IList<T> ilist, Action<List<T>> sortAction) {
+            List<T> list;
+            if (ilist is List<T>) {
+                list = ilist as List<T>;
+                sortAction(list);
+            } else {
+                list = new List<T>();
+                list.AddRange(ilist);
+                sortAction(list);
+                for (var l = 0; l < list.Count; l++)
+                    ilist[l] = list[l];
+            } // end if-else
         } // end method
 
 

@@ -48,5 +48,14 @@ namespace Xanotech.Tools {
 
         public Func<TKey, TValue> Initializer { get; set; }
 
+
+
+        public void PutValue(TKey key, TValue value) {
+            if (cache == null)
+                cache = new Dictionary<TKey, TValue>();
+            lock (cache)
+                cache[key] = value;
+        } // end method
+
     } // end class
 } // end namespace

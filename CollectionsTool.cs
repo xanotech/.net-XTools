@@ -59,7 +59,7 @@ namespace Xanotech.Tools {
 
         public static IDictionary<string, string> Read(this IDictionary<string, string> dict, StreamReader reader) {
             if (reader == null)
-                throw new ArgumentNullException("reader", "The reader parameter is null");
+                throw new ArgumentNullException("reader", "The reader parameter is null.");
 
             while (reader.Peek() >= 0) {
                 var line = reader.ReadLine();
@@ -83,7 +83,7 @@ namespace Xanotech.Tools {
 
         public static IDictionary<string, string> Read(this IDictionary<string, string> dict, string filename) {
             if (filename == null)
-                throw new ArgumentNullException("filename", "The filename parameter is null");
+                throw new ArgumentNullException("filename", "The filename parameter is null.");
 
             using (var reader = new StreamReader(filename))
                 dict.Read(reader);
@@ -147,7 +147,7 @@ namespace Xanotech.Tools {
 
         public static void Write(this IDictionary<string, string> dict, string filename) {
             if (filename == null)
-                throw new ArgumentNullException("filename", "The filename parameter is null");
+                throw new ArgumentNullException("filename", "The filename parameter is null.");
 
             using (var writer = new StreamWriter(filename))
                 dict.Write(writer);

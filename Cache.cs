@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Xanotech.Tools {
     public class Cache<TKey, TValue> {
 
-        private IDictionary<TKey, TValue> cache;
+        private ConcurrentDictionary<TKey, TValue> cache = new ConcurrentDictionary<TKey, TValue>();
 
 
 
@@ -27,20 +27,10 @@ namespace Xanotech.Tools {
 
         public TValue GetValue(TKey key, Func<TValue> initializer) {
             TValue value;
-            if (cache == null)
-                cache = new Dictionary<TKey, TValue>();
-            lock (cache) {
-                if (cache.TryGetValue(key, out value))
-                    return value;
-
-                if (initializer == null && Initializer == null)
-                    throw new NullReferenceException("Unable to create value, no initializer Func specified.");
-                if (initializer != null)
-                    value = initializer();
-                else
-                    value = Initializer(key);
-                cache[key] = value;
-            } // end lock
+            if (initializer != null)
+                value = cache.GetOrAdd(key, k => initializer());
+            else
+                value = cache.GetOrAdd(key, Initializer);
             return value;
         } // end method
 
@@ -51,11 +41,18 @@ namespace Xanotech.Tools {
 
 
         public void PutValue(TKey key, TValue value) {
-            if (cache == null)
-                cache = new Dictionary<TKey, TValue>();
-            lock (cache)
-                cache[key] = value;
+            cache[key] = value;
         } // end method
+
+
+
+        public TValue this[TKey key] {
+            get {
+                return GetValue(key);
+            } set {
+                PutValue(key, value);
+            } // end get-set
+        } // end indexer
 
     } // end class
 } // end namespace

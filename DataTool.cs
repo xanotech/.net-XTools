@@ -43,7 +43,7 @@ namespace Xanotech.Tools {
 
 
 
-        public static DbConnection OpenConnection(string connectionStringName) {
+        public static IDbConnection OpenConnection(string connectionStringName) {
             var cs = ConfigurationManager.ConnectionStrings[connectionStringName];
 
             // If no connection string is found, throw an exception.
@@ -54,6 +54,15 @@ namespace Xanotech.Tools {
             var pf = DbProviderFactories.GetFactory(cs.ProviderName);
             var con = pf.CreateConnection();
             con.ConnectionString = cs.ConnectionString;
+            con.Open();
+            return con;
+        } // end method
+
+
+
+        public static T OpenConnection<T>(string connectionString) where T : IDbConnection, new() {
+            var con = new T();
+            con.ConnectionString = connectionString;
             con.Open();
             return con;
         } // end method

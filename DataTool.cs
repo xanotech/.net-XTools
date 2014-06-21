@@ -36,9 +36,18 @@ namespace Xanotech.Tools {
                 cmd.CommandText = commandText;
                 //if (parameters != null) SetParameters(cmd, parameters);
                 cmd.Prepare();
-                IDataReader reader = cmd.ExecuteReader();
-                return reader.ReadData();
+                using (IDataReader reader = cmd.ExecuteReader())
+                    return reader.ReadData();
             } // end using
+        } // end method
+
+
+
+        public static T OpenConnection<T>(string connectionString) where T : IDbConnection, new() {
+            var con = new T();
+            con.ConnectionString = connectionString;
+            con.Open();
+            return con;
         } // end method
 
 
@@ -54,15 +63,6 @@ namespace Xanotech.Tools {
             var pf = DbProviderFactories.GetFactory(cs.ProviderName);
             var con = pf.CreateConnection();
             con.ConnectionString = cs.ConnectionString;
-            con.Open();
-            return con;
-        } // end method
-
-
-
-        public static T OpenConnection<T>(string connectionString) where T : IDbConnection, new() {
-            var con = new T();
-            con.ConnectionString = connectionString;
             con.Open();
             return con;
         } // end method

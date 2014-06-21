@@ -12,6 +12,7 @@ namespace Xanotech.Tools {
         private Cache<Tuple<string, Type, Type, Type>, MethodInfo> cacheGetMethod_String_Type3;
         private Cache<Tuple<string, Type, Type, Type, Type>, MethodInfo> cacheGetMethod_String_Type4;
         private Cache<string, PropertyInfo> cacheGetProperty_String;
+        private Cache<Tuple<string, BindingFlags>, PropertyInfo> cacheGetProperty_String_BindingFlags;
         private Cache<Type, bool> cacheIsAssignableFrom;
         private Cache<Type, Type> cacheMakeGenericType1;
         private Cache<Tuple<Type, Type>, Type> cacheMakeGenericType2;
@@ -29,6 +30,7 @@ namespace Xanotech.Tools {
             cacheGetMethod_String_Type3 = new Cache<Tuple<string, Type, Type, Type>, MethodInfo>();
             cacheGetMethod_String_Type4 = new Cache<Tuple<string, Type, Type, Type, Type>, MethodInfo>();
             cacheGetProperty_String = new Cache<string, PropertyInfo>();
+            cacheGetProperty_String_BindingFlags = new Cache<Tuple<string, BindingFlags>, PropertyInfo>();            
             cacheIsAssignableFrom = new Cache<Type, bool>();
             cacheMakeGenericType1 = new Cache<Type, Type>();
             cacheMakeGenericType2 = new Cache<Tuple<Type,Type>,Type>();
@@ -69,7 +71,16 @@ namespace Xanotech.Tools {
 
 
         public PropertyInfo GetProperty(string name) {
-            return cacheGetProperty_String.GetValue(name, () => reflectedType.GetProperty(name));
+            //return cacheGetProperty_String.GetValue(name, () => reflectedType.GetProperty(name));
+            return reflectedType.GetProperty(name);
+        } // end method
+
+
+
+        public PropertyInfo GetProperty(string name, BindingFlags bindingAttr) {
+            //var key = new Tuple<string, BindingFlags>(name, bindingAttr);
+            //return cacheGetProperty_String_BindingFlags.GetValue(key, () => reflectedType.GetProperty(key.Item1, key.Item2));
+            return reflectedType.GetProperty(name, bindingAttr);
         } // end method
 
 

@@ -20,7 +20,7 @@ namespace Xanotech.Tools {
 
 
         public TValue GetValue(TKey key) {
-            return GetValue(key, null);
+            return GetValue(key, (Func<TValue>)null);
         } // end method
 
 
@@ -29,6 +29,17 @@ namespace Xanotech.Tools {
             TValue value;
             if (initializer != null)
                 value = cache.GetOrAdd(key, k => initializer());
+            else
+                value = cache.GetOrAdd(key, Initializer);
+            return value;
+        } // end method
+
+
+
+        public TValue GetValue(TKey key, Func<TKey, TValue> initializer) {
+            TValue value;
+            if (initializer != null)
+                value = cache.GetOrAdd(key, initializer);
             else
                 value = cache.GetOrAdd(key, Initializer);
             return value;

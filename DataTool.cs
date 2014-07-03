@@ -30,6 +30,15 @@ namespace Xanotech.Tools {
 
 
 
+        public static void AddParameter(this IDbCommand cmd, string name, object value) {
+            var parameter = cmd.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value ?? DBNull.Value;
+            cmd.Parameters.Add(parameter);
+        } // end method
+
+
+
         public static IEnumerable<IDictionary<string, object>> ExecuteReader(this IDbConnection con,
             string commandText) {
             using (IDbCommand cmd = con.CreateCommand()) {

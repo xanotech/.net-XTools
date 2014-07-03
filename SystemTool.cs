@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Xanotech.Tools {
     public static class SystemTool {
@@ -67,109 +65,6 @@ namespace Xanotech.Tools {
             if (comparison == Comparison.Default)
                 comparison = Comparison.String;
             return obj.ToString().CompareTo(someObj.ToString());
-        } // end method
-
-
-
-        private static object FindExtreme(IEnumerable enumerable, ref Comparison comparison, bool max) {
-            object extreme = null;
-
-            var isDefaultComparison = comparison == Comparison.Default; // indicates if the original comparsion value is Default
-            var isEverDefault = false; // indicates if any comparison is ever Default
-            var isEverNumeric = false; // indicates if any comparison is ever Numeric
-            var isFirst = true; // flag for processing the first item in enumerable
-            var isStringCheckDone = false; // flag for indicating if all the items in enumerable were checked for String comparison
-
-            // Loop through all the items in enumerable.  If comparison is either String
-            // or Numeric, just perform the comparison, look at the result and set extreme
-            // if necessary.  For Default comparisons, special logic is necessary (see
-            // comment for isDefaultComparison if statement below).
-            foreach (var item in enumerable) {
-                if (isFirst) {
-                    isFirst = false;
-                    extreme = item;
-                    continue;
-                } // end if
-
-                // (Non-Default comparisons are easy.  Just perform the comparison.
-                // For Default, perform the check and then examine the comparison
-                // value afterwards.  If its String, just return FindExtreme passing
-                // comparison of String.  If its Default, make note that a Default
-                // comparison was used by setting isEverDefault to true;
-                // If its numeric, make note that a Numeric comparison was used
-                // by setting isEverNumeric to true.  Then, if it hasn't already
-                // been done (via isStingCheckDone), compare all the values
-                // to the number 0 with a Default comparison to see if any rely
-                // on a String comparison.  If they do, just return FindExtreme
-                // passing comparison of String.  If no String comparisons occur,
-                // then either Default only or Numeric only comparisons are safe.
-                int compResult;
-                if (isDefaultComparison) {
-                    comparison = Comparison.Default;
-                    compResult = item.CompareTo(extreme, ref comparison);
-
-                    if (comparison == Comparison.String)
-                        return FindExtreme(enumerable, ref comparison, max);
-
-                    if (comparison == Comparison.Default)
-                        isEverDefault = true;
-
-                    if (comparison == Comparison.Numeric) {
-                        isEverNumeric = true;
-                        if (!isStringCheckDone) {
-                            foreach (var e in enumerable) {
-                                comparison = Comparison.Default;
-                                e.CompareTo(0, ref comparison);
-                                if (comparison == Comparison.String)
-                                    return FindExtreme(enumerable, ref comparison, max);
-                            } // end foreach
-                            isStringCheckDone = true;
-                        } // end if
-                    } // end if
-                } else
-                    compResult = item.CompareTo(extreme, ref comparison);
-
-                if (max && compResult > 0 || !max && compResult < 0)
-                    extreme = item;
-            } // end foreach
-
-            // At this point, there are no String comparisons.  At this point,
-            // if there was ever a Default comparison and also a Numeric comparison,
-            // it is necessary to repeat FindExtreme call but this time with
-            // an explicit Numeric comparison in case mixed objects that are Comparable
-            // (Default comparison) do not compare the same way numerically.
-            if (isEverNumeric && isEverDefault) {
-                comparison = Comparison.Numeric;
-                return FindExtreme(enumerable, ref comparison, max);
-            } // end if
-
-            return extreme;
-        } // end method
-
-
-
-        public static object FindMax(this IEnumerable enumerable) {
-            var comp = Comparison.Default;
-            return enumerable.FindMax(ref comp);
-        } // end method
-
-
-
-        public static object FindMax(this IEnumerable enumerable, ref Comparison comparison) {
-            return FindExtreme(enumerable, ref comparison, true);
-        } // end method
-
-
-
-        public static object FindMin(this IEnumerable enumerable) {
-            var comp = Comparison.Default;
-            return enumerable.FindMin(ref comp);
-        } // end method
-
-
-
-        public static object FindMin(this IEnumerable enumerable, ref Comparison comparison) {
-            return FindExtreme(enumerable, ref comparison, false);
         } // end method
 
 
@@ -304,28 +199,6 @@ namespace Xanotech.Tools {
             bool? b = obj as bool?;
             if (b != null)
                 return b.Value ? "1" : "0";
-
-            var enumerable = obj as IEnumerable;
-            if (enumerable != null) {
-                var isAfterFirst = false;
-                var valuesOnLineCount = 0;
-                var sqlStr = new StringBuilder("(");
-                foreach (var e in enumerable) {
-                    if (isAfterFirst) {
-                        sqlStr.Append(',');
-                        if (valuesOnLineCount == 8) {
-                            sqlStr.Append(Environment.NewLine);
-                            valuesOnLineCount = 0;
-                        } else
-                            sqlStr.Append(' ');
-                    }
-                    sqlStr.Append(e.ToSqlString());
-                    isAfterFirst = true;
-                    valuesOnLineCount++;
-                }
-                sqlStr.Append(")");
-                return sqlStr.ToString();
-            } // end if
 
             return obj.ToString();
         } // end method

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -234,6 +235,13 @@ namespace Xanotech.Tools {
                 for (var l = 0; l < list.Count; l++)
                     ilist[l] = list[l];
             } // end if-else
+        } // end method
+
+
+
+        public static bool TryRemove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key) {
+            TValue value;
+            return dictionary.TryRemove(key, out value);
         } // end method
 
 

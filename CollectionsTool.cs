@@ -19,6 +19,14 @@ namespace Xanotech.Tools {
 
 
 
+        public static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> idictionary,
+            IDictionary<TKey, TValue> items) {
+            foreach (var key in items.Keys)
+                idictionary[key] = items[key];
+        } // end method
+
+
+
         private static string Decode(string val) {
             if (val == null) return "";
 

@@ -174,7 +174,7 @@ namespace Xanotech.Tools {
 
 
         public static string ToSqlString(this object obj) {
-            if (obj == null)
+            if (obj == null || obj == DBNull.Value)
                 return "NULL";
 
             // String Processing: strings, dates, and characters are all formatted as 'value'.

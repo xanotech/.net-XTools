@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Xanotech.Tools {
     public static class SystemTool {
@@ -141,6 +142,33 @@ namespace Xanotech.Tools {
 
         public static string Remove(this String str, string substring) {
             return str.Replace(substring, "");
+        } // end method
+
+
+
+        public static string RemoveIgnoreCase(this String str, string substring) {
+            return str.ReplaceIgnoreCase(substring, "");
+        } // end method
+
+
+
+        public static string ReplaceIgnoreCase(this String str, string oldValue, string newValue) {
+            if (oldValue == null || oldValue.Length == 0)
+                return str;
+
+            var currentIndex = str.IndexOf(oldValue, StringComparison.OrdinalIgnoreCase);
+            var lastIndex = 0;
+
+            var result = new StringBuilder();
+            while (currentIndex >= 0) {
+                result.Append(str.Substring(lastIndex, currentIndex - lastIndex));
+                result.Append(newValue);
+                lastIndex = currentIndex + oldValue.Length;
+                currentIndex = str.IndexOf(oldValue, lastIndex, StringComparison.OrdinalIgnoreCase);
+            } // End while
+            result.Append(str.Substring(lastIndex));
+
+            return result.ToString();
         } // end method
 
 

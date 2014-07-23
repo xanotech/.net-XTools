@@ -139,6 +139,12 @@ namespace Xanotech.Tools {
 
 
 
+        public static string Remove(this String str, string substring) {
+            return str.Replace(substring, "");
+        } // end method
+
+
+
         public static double? RoundToSignificantDigits(this double? d, int digits) {
             if (d == null || d == 0)
                 return d;

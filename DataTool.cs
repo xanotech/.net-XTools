@@ -12,6 +12,8 @@ namespace Xanotech.Tools {
     /// </summary>
     public static class DataTool {
 
+        private static Cache<Type, Mirror> mirrorCache = new Cache<Type, Mirror>(t => new Mirror(t));
+
         /*
         public static DbType GetDbType(object value) {
             DbType type = DbType.String;
@@ -30,11 +32,32 @@ namespace Xanotech.Tools {
 
 
 
-        public static void AddParameter(this IDbCommand cmd, string name, object value) {
-            var parameter = cmd.CreateParameter();
-            parameter.ParameterName = name;
-            parameter.Value = value ?? DBNull.Value;
-            cmd.Parameters.Add(parameter);
+        public static DbParameter AddParameter(this IDbCommand cmd, string name, object value, DataRow schemaRow = null) {
+            var mirror = mirrorCache[cmd.Parameters.GetType()];
+            var addMethod = mirror.GetMethod("AddWithValue", new[] {typeof(string), typeof(object)});
+            var parameter = addMethod.Invoke(cmd.Parameters, new[] {name, value ?? DBNull.Value}) as DbParameter;
+
+            if (schemaRow != null) {
+                mirror = mirrorCache[parameter.GetType()];
+                var prop = mirror.GetProperty("SqlDbType");
+                var dataTypeName = schemaRow.GetValue<string>("DataTypeName");
+                if (prop != null && dataTypeName != null) {
+                    var sqlDbType = Enum.Parse(typeof(SqlDbType), dataTypeName, true);
+                    prop.SetValue(parameter, sqlDbType, null);
+                } // end if
+
+                var dataType = schemaRow.GetValue<Type>("DataType");
+                if (dataType.Name == "Decimal") {
+                    SetParameterProperty(parameter, "Precision", schemaRow["NumericPrecision"]);
+                    SetParameterProperty(parameter, "Scale", schemaRow["NumericScale"]);
+                } // end if
+
+                object size = 0;
+                if (dataType.Name == "String")
+                    size = schemaRow["ColumnSize"];
+                SetParameterProperty(parameter, "Size", size);
+            } // end if
+            return parameter;
         } // end method
 
 
@@ -48,6 +71,22 @@ namespace Xanotech.Tools {
                 using (IDataReader reader = cmd.ExecuteReader())
                     return reader.ReadData();
             } // end using
+        } // end method
+
+
+
+        public static T GetValue<T>(this DataRow row, string columnName) {
+            T value = default(T);
+            if (row.Table == null)
+                try {
+                    return (T)row[columnName];
+                } catch (ArgumentException) {
+                    // Do nothing: the exception occurred because the columnName
+                    // doesn't exist.  Just leave value as default(T).
+                } // end try-catch
+            else if (row.Table.Columns.Contains(columnName))
+                value = (T)row[columnName];
+            return value;
         } // end method
 
 
@@ -91,6 +130,20 @@ namespace Xanotech.Tools {
                 data.Add(row);
             } // end while
             return data;
+        } // end method
+
+
+
+        private static void SetParameterProperty(object parameter, string propertyName, object value) {
+            var mirror = mirrorCache[parameter.GetType()];
+            var prop = mirror.GetProperty(propertyName);
+            if (prop == null)
+                return;
+
+            mirror = mirrorCache[typeof(Convert)];
+            var convert = mirror.GetMethod("To" + prop.PropertyType.Name, new[] {typeof(object)});
+            value = convert.Invoke(null, new[] {value});
+            prop.SetValue(parameter, value, null);
         } // end method
 
 

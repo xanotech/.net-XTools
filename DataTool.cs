@@ -120,7 +120,7 @@ namespace Xanotech.Tools {
         public static IEnumerable<IDictionary<string, object>> ReadData(this IDataReader reader) {
             var data = new List<IDictionary<string, object>>();
             while (reader.Read()) {
-                var row = new Dictionary<string, object>();
+                var row = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
                 for (int fc = 0; fc < reader.FieldCount; fc++) {
                     string name = reader.GetName(fc);
                     object value = reader.GetValue(fc);

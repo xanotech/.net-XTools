@@ -3,6 +3,8 @@ using System.Configuration;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Data.OleDb;
+using System.Reflection;
 
 namespace Xanotech.Tools {
 
@@ -13,22 +15,7 @@ namespace Xanotech.Tools {
     public static class DataTool {
 
         private static Cache<Type, Mirror> mirrorCache = new Cache<Type, Mirror>(t => new Mirror(t));
-
-        /*
-        public static DbType GetDbType(object value) {
-            DbType type = DbType.String;
-            if (value is bool) type = DbType.SByte;
-            else if (value is byte) type = DbType.Byte;
-            else if (value is char) type = DbType.String;
-            else if (value is DateTime) type = DbType.DateTime;
-            else if (value is decimal) type = DbType.Decimal;
-            else if (value is double) type = DbType.Double;
-            else if (value is sbyte) type = DbType.SByte;
-            else if (value is string) type = DbType.String;
-            else type = DbType.VarNumeric;
-            return type;
-        } // end method
-        */
+        private static IDictionary<int, OleDbType> oleDbTypeMap = LoadOleDbTypeMap();
 
 
 
@@ -40,10 +27,21 @@ namespace Xanotech.Tools {
             if (schemaRow != null) {
                 mirror = mirrorCache[parameter.GetType()];
                 var prop = mirror.GetProperty("SqlDbType");
-                var dataTypeName = schemaRow.GetValue<string>("DataTypeName");
-                if (prop != null && dataTypeName != null) {
-                    var sqlDbType = Enum.Parse(typeof(SqlDbType), dataTypeName, true);
-                    prop.SetValue(parameter, sqlDbType, null);
+                if (prop != null) {
+                    var dataTypeName = schemaRow.GetValue<string>("DataTypeName");
+                    if (dataTypeName != null) {
+                        var sqlDbType = Enum.Parse(typeof(SqlDbType), dataTypeName, true);
+                        prop.SetValue(parameter, sqlDbType, null);
+                    } // end if
+                } // end if
+
+                prop = mirror.GetProperty("OleDbType");
+                if (prop != null) {
+                    var providerType = schemaRow.GetValue<int?>("ProviderType");
+                    if (providerType != null) {
+                        var oleDbType = oleDbTypeMap[providerType.Value];
+                        prop.SetValue(parameter, oleDbType, null);
+                    } // end if
                 } // end if
 
                 var dataType = schemaRow.GetValue<Type>("DataType");
@@ -87,6 +85,18 @@ namespace Xanotech.Tools {
             else if (row.Table.Columns.Contains(columnName))
                 value = (T)row[columnName];
             return value;
+        } // end method
+
+
+
+        private static IDictionary<int, OleDbType> LoadOleDbTypeMap() {
+            var map = new Dictionary<int, OleDbType>();
+            var fields = typeof(OleDbType).GetFields(BindingFlags.Public | BindingFlags.Static);
+            foreach (var field in fields) {
+                var oleDbType = (OleDbType)field.GetValue(null);
+                map[oleDbType.GetHashCode()] = oleDbType;
+            } // end foreach
+            return map;
         } // end method
 
 
@@ -145,37 +155,6 @@ namespace Xanotech.Tools {
             value = convert.Invoke(null, new[] {value});
             prop.SetValue(parameter, value, null);
         } // end method
-
-
-
-        /*
-        private static void SetParameters(IDbCommand cmd,
-            ICollection parameters) {
-            // For IDictionary objects, add named parameters with the
-            // assumption that they keys of the parameters collection
-            // are the names of the parameters.
-            // For other types of collections, assume each element
-            // in the collection is a parameter value and just add them
-            // without a name in the order they appear in the collection.
-            if (parameters is IDictionary) {
-                IDictionary parameterDictionary = (IDictionary)parameters;
-                foreach (string k in parameterDictionary.Keys) {
-                    IDbDataParameter parameter = cmd.CreateParameter();
-                    parameter.ParameterName = k;
-                    parameter.Value = parameterDictionary[k];
-                    parameter.DbType = GetDbType(parameter.Value);
-                    cmd.Parameters.Add(parameter);
-                } // end foreach
-            } else {
-                foreach (object p in parameters) {
-                    IDbDataParameter parameter = cmd.CreateParameter();
-                    parameter.Value = p;
-                    parameter.DbType = GetDbType(p);
-                    cmd.Parameters.Add(parameter);
-                } // end foreach
-            } // end if-else
-        } // end method
-        */
 
     } // end class
 } // end namespace

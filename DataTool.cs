@@ -14,18 +14,25 @@ namespace Xanotech.Tools {
     /// </summary>
     public static class DataTool {
 
+        private static IDictionary<Type, DbType> dbTypeMap = CreateDbTypeMap();
         private static Cache<Type, Mirror> mirrorCache = new Cache<Type, Mirror>(t => new Mirror(t));
-        private static IDictionary<int, OleDbType> oleDbTypeMap = LoadOleDbTypeMap();
+        private static IDictionary<int, OleDbType> oleDbTypeMap = CreateOleDbTypeMap();
+        private static Cache<string, string> parameterFormatMap = new Cache<string, string>();
 
 
 
-        public static DbParameter AddParameter(this IDbCommand cmd, string name, object value, DataRow schemaRow = null) {
-            var mirror = mirrorCache[cmd.Parameters.GetType()];
-            var addMethod = mirror.GetMethod("AddWithValue", new[] {typeof(string), typeof(object)});
-            var parameter = addMethod.Invoke(cmd.Parameters, new[] {name, value ?? DBNull.Value}) as DbParameter;
+        public static IDbDataParameter AddParameter(this IDbCommand cmd, string name, object value, DataRow schemaRow = null) {
+            var parameter = AttemptAddWithValue(cmd.Parameters, name, value ?? DBNull.Value);
+            if (parameter == null) {
+                parameter = cmd.CreateParameter();
+                parameter.ParameterName = name;
+                value = parameter.Set(value);
+                parameter.DbType = dbTypeMap[value.GetType()];
+                cmd.Parameters.Add(parameter);
+            } // end if
 
             if (schemaRow != null) {
-                mirror = mirrorCache[parameter.GetType()];
+                var mirror = mirrorCache[parameter.GetType()];
                 var prop = mirror.GetProperty("SqlDbType");
                 if (prop != null) {
                     var dataTypeName = schemaRow.GetValue<string>("DataTypeName");
@@ -60,6 +67,82 @@ namespace Xanotech.Tools {
 
 
 
+        public static long? AsLong(object obj) {
+            if (obj == null || obj == DBNull.Value)
+                return null;
+            return Convert.ToInt64(obj);
+        } // end method
+
+
+
+        private static IDbDataParameter AttemptAddWithValue(IDataParameterCollection parameters,
+            string name, object value) {
+            var mirror = mirrorCache[parameters.GetType()];
+            var addWithValue = mirror.GetMethod("AddWithValue", new[] {typeof(string), typeof(object)});
+            if (addWithValue == null)
+                return null;
+
+            var parameter = addWithValue.Invoke(parameters, new[] {name, value});
+            return parameter as IDbDataParameter;
+        } // end method
+
+
+
+        private static IDictionary<Type, DbType> CreateDbTypeMap() {
+            var map = new Dictionary<Type, DbType>();
+            map[typeof(DBNull)] = DbType.String;
+            map[typeof(string)] = DbType.String;
+            map[typeof(byte)] = DbType.Byte;
+            map[typeof(sbyte)] = DbType.SByte;
+            map[typeof(short)] = DbType.Int16;
+            map[typeof(ushort)] = DbType.UInt16;
+            map[typeof(int)] = DbType.Int32;
+            map[typeof(uint)] = DbType.UInt32;
+            map[typeof(long)] = DbType.Int64;
+            map[typeof(ulong)] = DbType.UInt64;
+            map[typeof(float)] = DbType.Single;
+            map[typeof(double)] = DbType.Double;
+            map[typeof(decimal)] = DbType.Decimal;
+            map[typeof(bool)] = DbType.Boolean;
+            map[typeof(char)] = DbType.StringFixedLength;
+            map[typeof(Guid)] = DbType.Guid;
+            map[typeof(DateTime)] = DbType.DateTime;
+            map[typeof(DateTimeOffset)] = DbType.DateTimeOffset;
+            map[typeof(byte[])] = DbType.Binary;
+            map[typeof(byte?)] = DbType.Byte;
+            map[typeof(sbyte?)] = DbType.SByte;
+            map[typeof(short?)] = DbType.Int16;
+            map[typeof(ushort?)] = DbType.UInt16;
+            map[typeof(int?)] = DbType.Int32;
+            map[typeof(uint?)] = DbType.UInt32;
+            map[typeof(long?)] = DbType.Int64;
+            map[typeof(ulong?)] = DbType.UInt64;
+            map[typeof(float?)] = DbType.Single;
+            map[typeof(double?)] = DbType.Double;
+            map[typeof(decimal?)] = DbType.Decimal;
+            map[typeof(bool?)] = DbType.Boolean;
+            map[typeof(char?)] = DbType.StringFixedLength;
+            map[typeof(Guid?)] = DbType.Guid;
+            map[typeof(DateTime?)] = DbType.DateTime;
+            map[typeof(DateTimeOffset?)] = DbType.DateTimeOffset;
+            //map[typeof(System.Data.Linq.Binary)] = DbType.Binary;
+            return map;
+        } // end method
+
+
+
+        private static IDictionary<int, OleDbType> CreateOleDbTypeMap() {
+            var map = new Dictionary<int, OleDbType>();
+            var fields = typeof(OleDbType).GetFields(BindingFlags.Public | BindingFlags.Static);
+            foreach (var field in fields) {
+                var oleDbType = (OleDbType)field.GetValue(null);
+                map[oleDbType.GetHashCode()] = oleDbType;
+            } // end foreach
+            return map;
+        } // end method
+
+
+
         public static IEnumerable<IDictionary<string, object>> ExecuteReader(this IDbConnection con,
             string commandText) {
             using (IDbCommand cmd = con.CreateCommand()) {
@@ -69,6 +152,37 @@ namespace Xanotech.Tools {
                 using (IDataReader reader = cmd.ExecuteReader())
                     return reader.ReadData();
             } // end using
+        } // end method
+
+
+
+        private static string FindParameterFormat(IDbConnection con) {
+            var defaultFormat = "@{0}";
+            var mirror = mirrorCache[con.GetType()];
+            var getSchema = mirror.GetMethod("GetSchema", new[] {typeof(string)});
+            if (getSchema == null)
+                return defaultFormat;
+            var dataSourceInfo = getSchema.Invoke(con, new[] {"DataSourceInformation"}) as DataTable;
+            if (dataSourceInfo == null)
+                return defaultFormat;
+
+            var format = dataSourceInfo.Rows[0].GetValue<string>("ParameterMarkerFormat") ?? defaultFormat;
+            // Some clients (*cough* SqlClient *cough*) return "{0}",
+            // which is invalid.  If this happens, just use defaultFormat;
+            if (format == "{0}")
+                format = defaultFormat;
+            return format;
+        } // end method
+
+
+
+        public static string FormatParameter(this IDbCommand cmd, string name) {
+            if (cmd == null || cmd.Connection == null || cmd.Connection.ConnectionString == null)
+                return "@" + name;
+
+            var format = parameterFormatMap.GetValue(cmd.Connection.ConnectionString,
+                () => { return FindParameterFormat(cmd.Connection); });
+            return string.Format(format, name);
         } // end method
 
 
@@ -85,18 +199,6 @@ namespace Xanotech.Tools {
             else if (row.Table.Columns.Contains(columnName))
                 value = (T)row[columnName];
             return value;
-        } // end method
-
-
-
-        private static IDictionary<int, OleDbType> LoadOleDbTypeMap() {
-            var map = new Dictionary<int, OleDbType>();
-            var fields = typeof(OleDbType).GetFields(BindingFlags.Public | BindingFlags.Static);
-            foreach (var field in fields) {
-                var oleDbType = (OleDbType)field.GetValue(null);
-                map[oleDbType.GetHashCode()] = oleDbType;
-            } // end foreach
-            return map;
         } // end method
 
 
@@ -140,6 +242,26 @@ namespace Xanotech.Tools {
                 data.Add(row);
             } // end while
             return data;
+        } // end method
+
+
+
+        public static object Set(this IDbDataParameter parameter, object value) {
+            try {
+                value = value ?? DBNull.Value;
+                parameter.Value = value;
+            } catch (ArgumentException) {
+                // Oracle does not support bools (the jerks) so,
+                // if the value is a bool, just 1 or 0 accordingly
+                // (if not a bool, throw the original exception).
+                var boolVal = value as bool?;
+                if (boolVal != null) {
+                    value = boolVal.Value ? 1 : 0;
+                    parameter.Value = value;
+                } else
+                    throw;
+            } // end try-catch
+            return value;
         } // end method
 
 

@@ -15,7 +15,6 @@ namespace Xanotech.Tools {
     public static class DataTool {
 
         private static IDictionary<Type, DbType> dbTypeMap = CreateDbTypeMap();
-        private static Cache<Type, Mirror> mirrorCache = new Cache<Type, Mirror>(t => new Mirror(t));
         private static IDictionary<int, OleDbType> oleDbTypeMap = CreateOleDbTypeMap();
         private static Cache<string, string> parameterFormatMap = new Cache<string, string>();
 
@@ -27,12 +26,30 @@ namespace Xanotech.Tools {
                 parameter = cmd.CreateParameter();
                 parameter.ParameterName = name;
                 value = parameter.Set(value);
-                parameter.DbType = dbTypeMap[value.GetType()];
                 cmd.Parameters.Add(parameter);
             } // end if
 
             if (schemaRow != null) {
-                var mirror = mirrorCache[parameter.GetType()];
+                var mirror = Mirror.mirrorCache[parameter.GetType()];
+                var dataType = schemaRow.GetValue<Type>("DataType");
+                if (dataType != null) {
+                    var isBool = (value as bool?) != null;
+                    if (isBool) {
+                        value = SystemTool.SmartConvert(value, dataType);
+                        parameter.Set(value);
+                    } // end if
+
+                    if (dataType.Name == "Decimal") {
+                        SetParameterProperty(parameter, "Precision", schemaRow["NumericPrecision"]);
+                        SetParameterProperty(parameter, "Scale", schemaRow["NumericScale"]);
+                    } // end if
+
+                    object size = 0;
+                    if (dataType.Name == "String")
+                        size = schemaRow["ColumnSize"];
+                    SetParameterProperty(parameter, "Size", size);
+                } // end if
+
                 var prop = mirror.GetProperty("SqlDbType");
                 if (prop != null) {
                     var dataTypeName = schemaRow.GetValue<string>("DataTypeName");
@@ -50,17 +67,6 @@ namespace Xanotech.Tools {
                         prop.SetValue(parameter, oleDbType, null);
                     } // end if
                 } // end if
-
-                var dataType = schemaRow.GetValue<Type>("DataType");
-                if (dataType.Name == "Decimal") {
-                    SetParameterProperty(parameter, "Precision", schemaRow["NumericPrecision"]);
-                    SetParameterProperty(parameter, "Scale", schemaRow["NumericScale"]);
-                } // end if
-
-                object size = 0;
-                if (dataType.Name == "String")
-                    size = schemaRow["ColumnSize"];
-                SetParameterProperty(parameter, "Size", size);
             } // end if
             return parameter;
         } // end method
@@ -77,7 +83,7 @@ namespace Xanotech.Tools {
 
         private static IDbDataParameter AttemptAddWithValue(IDataParameterCollection parameters,
             string name, object value) {
-            var mirror = mirrorCache[parameters.GetType()];
+            var mirror = Mirror.mirrorCache[parameters.GetType()];
             var addWithValue = mirror.GetMethod("AddWithValue", new[] {typeof(string), typeof(object)});
             if (addWithValue == null)
                 return null;
@@ -147,8 +153,6 @@ namespace Xanotech.Tools {
             string commandText) {
             using (IDbCommand cmd = con.CreateCommand()) {
                 cmd.CommandText = commandText;
-                //if (parameters != null) SetParameters(cmd, parameters);
-                cmd.Prepare();
                 using (IDataReader reader = cmd.ExecuteReader())
                     return reader.ReadData();
             } // end using
@@ -158,11 +162,23 @@ namespace Xanotech.Tools {
 
         private static string FindParameterFormat(IDbConnection con) {
             var defaultFormat = "@{0}";
-            var mirror = mirrorCache[con.GetType()];
+
+            // I hate this kludge, but Informix does not support GetSchema and
+            // it doesn't use "@ParameterName" like every other database, so...
+            if (con.GetType().FullName == "IBM.Data.Informix.IfxConnection")
+                defaultFormat = "?";
+            
+            var mirror = Mirror.mirrorCache[con.GetType()];
             var getSchema = mirror.GetMethod("GetSchema", new[] {typeof(string)});
             if (getSchema == null)
                 return defaultFormat;
-            var dataSourceInfo = getSchema.Invoke(con, new[] {"DataSourceInformation"}) as DataTable;
+
+            DataTable dataSourceInfo = null;
+            try {
+                dataSourceInfo = getSchema.Invoke(con, new[] {"DataSourceInformation"}) as DataTable;
+            } catch {
+                // Do nothing: the null check after the try-catch will deal with it.
+            } // end try catch
             if (dataSourceInfo == null)
                 return defaultFormat;
 
@@ -246,10 +262,29 @@ namespace Xanotech.Tools {
 
 
 
+        public static DataTable ReadDataTable(this IDbConnection con,
+            string commandText) {
+            var assembly = con.GetType().Assembly;
+            var adapterName = con.GetType().FullName;
+            adapterName = adapterName.Substring(0, adapterName.Length - 10) + "DataAdapter";
+            var adapterType = assembly.GetType(adapterName);
+
+            var dataTable = new DataTable();
+            using (IDbCommand cmd = con.CreateCommand())
+            using (var adapter = Activator.CreateInstance(adapterType, new[] {cmd}) as DbDataAdapter) {
+                cmd.CommandText = commandText;
+                adapter.Fill(dataTable);
+            } // end using
+            return dataTable;
+        } // end method
+
+
+
         public static object Set(this IDbDataParameter parameter, object value) {
             try {
                 value = value ?? DBNull.Value;
                 parameter.Value = value;
+                parameter.DbType = dbTypeMap[value.GetType()];
             } catch (ArgumentException) {
                 // Oracle does not support bools (the jerks) so,
                 // if the value is a bool, just 1 or 0 accordingly
@@ -258,6 +293,7 @@ namespace Xanotech.Tools {
                 if (boolVal != null) {
                     value = boolVal.Value ? 1 : 0;
                     parameter.Value = value;
+                    parameter.DbType = dbTypeMap[value.GetType()];
                 } else
                     throw;
             } // end try-catch
@@ -267,14 +303,12 @@ namespace Xanotech.Tools {
 
 
         private static void SetParameterProperty(object parameter, string propertyName, object value) {
-            var mirror = mirrorCache[parameter.GetType()];
+            var mirror = Mirror.mirrorCache[parameter.GetType()];
             var prop = mirror.GetProperty(propertyName);
             if (prop == null)
                 return;
 
-            mirror = mirrorCache[typeof(Convert)];
-            var convert = mirror.GetMethod("To" + prop.PropertyType.Name, new[] {typeof(object)});
-            value = convert.Invoke(null, new[] {value});
+            value = SystemTool.SmartConvert(value, prop.PropertyType);
             prop.SetValue(parameter, value, null);
         } // end method
 

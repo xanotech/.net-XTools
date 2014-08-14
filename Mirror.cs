@@ -21,6 +21,8 @@ namespace Xanotech.Tools {
         private PropertyInfo[] properties;
         private Type reflectedType;
 
+        internal static Cache<Type, Mirror> mirrorCache = new Cache<Type, Mirror>(t => new Mirror(t));
+
 
 
         public Mirror(Type type) {

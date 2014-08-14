@@ -188,6 +188,18 @@ namespace Xanotech.Tools {
 
 
 
+        public static object SmartConvert(object obj, Type type) {
+            if (type.IsNullable())
+                type = Nullable.GetUnderlyingType(type);
+            var mirror = Mirror.mirrorCache[typeof(Convert)];
+            var convert = mirror.GetMethod("To" + type.Name, new[] { typeof(object) });
+            if (convert == null)
+                return null;
+            return convert.Invoke(null, new[] { obj });
+        } // end method
+
+
+
         public static string ToBasicString(this object obj) {
             if (obj == null)
                 return null;

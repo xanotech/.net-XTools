@@ -6,6 +6,8 @@ using System.Reflection;
 namespace Xanotech.Tools {
     public class Mirror {
 
+        private Cache<string, MethodInfo> cacheGetMethod_String;
+        private Cache<Tuple<string, BindingFlags>, MethodInfo> cacheGetMethod_String_BindingFlags;
         private Cache<string, MethodInfo> cacheGetMethod_String_Type0;
         private Cache<Tuple<string, Type>, MethodInfo> cacheGetMethod_String_Type1;
         private Cache<Tuple<string, Type, Type>, MethodInfo> cacheGetMethod_String_Type2;
@@ -26,6 +28,8 @@ namespace Xanotech.Tools {
 
 
         public Mirror(Type type) {
+            cacheGetMethod_String = new Cache<string, MethodInfo>();
+            cacheGetMethod_String_BindingFlags = new Cache<Tuple<string, BindingFlags>, MethodInfo>();
             cacheGetMethod_String_Type0 = new Cache<string, MethodInfo>();
             cacheGetMethod_String_Type1 = new Cache<Tuple<string, Type>, MethodInfo>();
             cacheGetMethod_String_Type2 = new Cache<Tuple<string, Type, Type>, MethodInfo>();
@@ -35,11 +39,24 @@ namespace Xanotech.Tools {
             cacheGetProperty_String_BindingFlags = new Cache<Tuple<string, BindingFlags>, PropertyInfo>();            
             cacheIsAssignableFrom = new Cache<Type, bool>();
             cacheMakeGenericType1 = new Cache<Type, Type>();
-            cacheMakeGenericType2 = new Cache<Tuple<Type,Type>,Type>();
-            cacheMakeGenericType3 = new Cache<Tuple<Type,Type,Type>,Type>();
-            cacheMakeGenericType4 = new Cache<Tuple<Type,Type,Type,Type>,Type>();
+            cacheMakeGenericType2 = new Cache<Tuple<Type, Type>, Type>();
+            cacheMakeGenericType3 = new Cache<Tuple<Type, Type, Type>, Type>();
+            cacheMakeGenericType4 = new Cache<Tuple<Type, Type, Type, Type>, Type>();
             reflectedType = type;
         } // end constructor
+
+
+
+        public MethodInfo GetMethod(string name) {
+            return cacheGetMethod_String.GetValue(name, () => reflectedType.GetMethod(name));
+        } // end method
+
+
+
+        public MethodInfo GetMethod(string name, BindingFlags bindingAttr) {
+            var key = new Tuple<string, BindingFlags>(name, bindingAttr);
+            return cacheGetMethod_String_BindingFlags.GetValue(key, () => reflectedType.GetMethod(name, bindingAttr));
+        } // end method
 
 
 

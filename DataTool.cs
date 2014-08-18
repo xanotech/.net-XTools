@@ -6,7 +6,7 @@ using System.Data.Common;
 using System.Data.OleDb;
 using System.Reflection;
 
-namespace Xanotech.Tools {
+namespace XTools {
 
     /// <summary>
     /// This class contains methods useful for simplifying database

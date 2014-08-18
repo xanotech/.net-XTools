@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public class Mirror {
 
         private Cache<string, MethodInfo> cacheGetMethod_String;

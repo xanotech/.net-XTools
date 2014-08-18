@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public static class CollectionsTool {
 
         public static void AddRange<T>(this IList<T> ilist, IEnumerable<T> items) {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public class Cache<TKey, TValue> {
 
         private ConcurrentDictionary<TKey, TValue> cache = new ConcurrentDictionary<TKey, TValue>();

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public static class WindowsFormsTool {
 
         public static void InvokeAction(this Control control, Action action) {

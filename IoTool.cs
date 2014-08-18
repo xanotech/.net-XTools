@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public static class IoTool {
 
         public static int CompareByContent(string file1, string file2) {

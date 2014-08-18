@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xanotech.Tools", "Xanotech.Tools.csproj", "{3EEC986C-679B-4CFE-A858-C10A2BE88B3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTools", "XTools.csproj", "{3EEC986C-679B-4CFE-A858-C10A2BE88B3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

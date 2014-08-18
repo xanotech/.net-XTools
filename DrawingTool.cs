@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 
-namespace Xanotech.Tools {
+namespace XTools {
     public static class DrawingTool {
 
         public static Image Read(string filename) {

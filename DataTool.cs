@@ -252,7 +252,8 @@ namespace XTools {
                 for (int fc = 0; fc < reader.FieldCount; fc++) {
                     string name = reader.GetName(fc);
                     object value = reader.GetValue(fc);
-                    if (value is DBNull) value = null;
+                    if (value is DBNull)
+                        value = null;
                     row[name] = value;
                 } // end for
                 data.Add(row);

@@ -189,6 +189,8 @@ namespace XTools {
 
 
         public static object SmartConvert(object obj, Type type) {
+            if (DBNull.Value == obj)
+                obj = null;
             if (type.IsNullable())
                 type = Nullable.GetUnderlyingType(type);
             var mirror = Mirror.mirrorCache[typeof(Convert)];

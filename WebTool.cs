@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Web;
@@ -220,7 +221,7 @@ namespace XTools {
 
 
         private static void SaveReferences(string rootPath, IList<string> references) {
-            if (references == null)
+            if (references == null || !Debugger.IsAttached)
                 return;
 
             for (var r = 0; r < references.Count; r++)

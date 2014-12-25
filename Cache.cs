@@ -60,9 +60,10 @@ namespace XTools {
         public TValue this[TKey key] {
             get {
                 return GetValue(key);
-            } set {
+            } // end get
+            set {
                 PutValue(key, value);
-            } // end get-set
+            } // end set
         } // end indexer
 
     } // end class

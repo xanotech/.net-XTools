@@ -32,6 +32,8 @@ namespace XTools {
 
             foreach (var file in files) {
                 var src = file.Substring(root.Length).Replace('\\', '/');
+                while (src.StartsWith("/"))
+                    src = src.Substring(1);
                 if (IsIgnored(ignore, src))
                     continue;
 

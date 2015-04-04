@@ -17,9 +17,9 @@ namespace XTools {
     public static class WebTool {
 
         public static void AutoScript(this Page page, string path) {
-            var suffix = "";
-            if (!page.Request.QueryString.ToString().ToLower().Contains("nojavascriptsuffix"))
-                suffix = "?" + DateTime.Now;
+            var suffix = "?" + DateTime.Now;
+            if (Debugger.IsAttached || page.Request.QueryString.ToString().ToLower().Contains("nojavascriptsuffix"))
+                suffix = "";
 
             var localPath = page.Server.MapPath(path);
             var root = page.Server.MapPath("~");

@@ -27,6 +27,19 @@ namespace XTools {
 
 
 
+        public static int Count(this IEnumerable enumerable) {
+            var icollection = enumerable as ICollection;
+            if (icollection != null)
+                return icollection.Count;
+
+            var count = 0;
+            foreach (var obj in enumerable)
+                count++;
+            return count;
+        } // end method
+
+
+
         private static string Decode(string val) {
             if (val == null) return "";
 

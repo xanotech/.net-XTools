@@ -12,6 +12,12 @@ namespace XTools {
 
 
 
+        private static TypeCode[] integerTypeCodes = new TypeCode[] {
+            TypeCode.SByte, TypeCode.Int16, TypeCode.Int32, TypeCode.Int64,
+            TypeCode.Byte, TypeCode.UInt16, TypeCode.UInt32, TypeCode.UInt64};
+
+
+
         public static int CompareTo(this object obj, object someObj) {
             var comp = Comparison.Default;
             return obj.CompareTo(someObj, ref comp);
@@ -113,6 +119,14 @@ namespace XTools {
         public static bool IsIEnumerable(this Type type) {
             return type.GetInterfaces().Any(i => i.IsGenericType &&
                 i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+        } // end method
+
+
+
+        public static bool IsInteger(this Type type) {
+            if (type.IsNullable())
+                type = Nullable.GetUnderlyingType(type);
+            return integerTypeCodes.Contains(Type.GetTypeCode(type));
         } // end method
 
 

@@ -7,10 +7,11 @@ using System.Data.OleDb;
 using System.Reflection;
 
 namespace XTools {
+    using IRecord = IDictionary<string, object>;
+    using Record = Dictionary<string, object>;
 
     /// <summary>
-    /// This class contains methods useful for simplifying database
-    /// interaction.
+    ///   This class contains methods useful for simplifying database interaction.
     /// </summary>
     public static class DataTool {
 
@@ -149,7 +150,7 @@ namespace XTools {
 
 
 
-        public static IEnumerable<IDictionary<string, object>> ExecuteReader(this IDbConnection con,
+        public static IEnumerable<IRecord> ExecuteReader(this IDbConnection con,
             string commandText) {
             using (IDbCommand cmd = con.CreateCommand()) {
                 cmd.CommandText = commandText;
@@ -245,10 +246,10 @@ namespace XTools {
 
 
 
-        public static IEnumerable<IDictionary<string, object>> ReadData(this IDataReader reader) {
-            var data = new List<IDictionary<string, object>>();
+        public static IEnumerable<IRecord> ReadData(this IDataReader reader) {
+            var data = new List<IRecord>();
             while (reader.Read()) {
-                var row = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                var row = new Record(StringComparer.OrdinalIgnoreCase);
                 for (int fc = 0; fc < reader.FieldCount; fc++) {
                     string name = reader.GetName(fc);
                     object value = reader.GetValue(fc);

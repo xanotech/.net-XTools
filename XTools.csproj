@@ -46,6 +46,7 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConcurrentSet.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="CollectionsTool.cs" />
     <Compile Include="DataTool.cs" />

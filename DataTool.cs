@@ -283,22 +283,12 @@ namespace XTools {
 
 
         public static object Set(this IDbDataParameter parameter, object value) {
-            try {
-                value = value ?? DBNull.Value;
-                parameter.Value = value;
-                parameter.DbType = dbTypeMap[value.GetType()];
-            } catch (ArgumentException) {
-                // Oracle does not support bools (the jerks) so,
-                // if the value is a bool, just 1 or 0 accordingly
-                // (if not a bool, throw the original exception).
-                var boolVal = value as bool?;
-                if (boolVal != null) {
-                    value = boolVal.Value ? 1 : 0;
-                    parameter.Value = value;
-                    parameter.DbType = dbTypeMap[value.GetType()];
-                } else
-                    throw;
-            } // end try-catch
+            value = value ?? DBNull.Value;
+            var boolVal = value as bool?;
+            if (boolVal != null)
+                value = boolVal.Value ? 1 : 0;
+            parameter.Value = value;
+            parameter.DbType = dbTypeMap[value.GetType()];
             return value;
         } // end method
 

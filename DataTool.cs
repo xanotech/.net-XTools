@@ -34,12 +34,6 @@ namespace XTools {
                 var mirror = Mirror.mirrorCache[parameter.GetType()];
                 var dataType = schemaRow.GetValue<Type>("DataType");
                 if (dataType != null) {
-                    var isBool = (value as bool?) != null;
-                    if (isBool) {
-                        value = SystemTool.SmartConvert(value, dataType);
-                        parameter.Set(value);
-                    } // end if
-
                     if (dataType.Name == "Decimal") {
                         SetParameterProperty(parameter, "Precision", schemaRow["NumericPrecision"]);
                         SetParameterProperty(parameter, "Scale", schemaRow["NumericScale"]);
@@ -284,9 +278,6 @@ namespace XTools {
 
         public static object Set(this IDbDataParameter parameter, object value) {
             value = value ?? DBNull.Value;
-            var boolVal = value as bool?;
-            if (boolVal != null)
-                value = boolVal.Value ? 1 : 0;
             parameter.Value = value;
             parameter.DbType = dbTypeMap[value.GetType()];
             return value;

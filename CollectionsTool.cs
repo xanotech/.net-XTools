@@ -27,6 +27,21 @@ namespace XTools {
 
 
 
+        public static bool Any(this IEnumerable enumerable) {
+            var icollection = enumerable as ICollection;
+            if (icollection != null)
+                return icollection.Count > 0;
+
+            var isAny = false;
+            foreach (var obj in enumerable) {
+                isAny = true;
+                break;
+            } // end foreach
+            return isAny;
+        } // end method
+
+
+
         public static int Count(this IEnumerable enumerable) {
             var icollection = enumerable as ICollection;
             if (icollection != null)

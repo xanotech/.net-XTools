@@ -16,32 +16,33 @@ namespace XTools {
     /// </summary>
     public static class WebTool {
 
+        // Used for locking in GetReferences and SaveReferences
+        private static object referencesLock = new Object();
+
+
+
         public static void AutoScript(this Page page, string path) {
-            var suffix = "?" + DateTime.Now;
-            if (Debugger.IsAttached || page.Request.QueryString.ToString().ToLower().Contains("nojavascriptsuffix"))
-                suffix = "";
+            var references = GetReferences(page);
+            var sources = page.GetHrefs(path, "*.js");
+            foreach (var source in sources) {
+                page.Response.Write("<script src=\"" + source + "\"></script>" + Environment.NewLine);
 
-            var localPath = page.Server.MapPath(path);
-            var root = page.Server.MapPath("~");
-            var files = new List<string>();
-            files.AddRange(Directory.EnumerateFiles(localPath, "*.js", SearchOption.AllDirectories));
-            files.Sort();
-
-            var ignore = GetIgnoredFiles(localPath);
-            var references = GetReferences(root);
-
-            foreach (var file in files) {
-                var src = file.Substring(root.Length).Replace('\\', '/');
-                while (src.StartsWith("/"))
-                    src = src.Substring(1);
-                if (IsIgnored(ignore, src))
-                    continue;
-
-                page.Response.Write("<script src=\"" + src + suffix + "\"></script>" + Environment.NewLine);
-                if (references != null && !references.Contains(src))
-                    references.Add(src);
+                var reference = source;
+                var index = reference.LastIndexOf("?");
+                if (index >= 0)
+                    reference = reference.Substring(0, index);
+                if (references != null && !references.Contains(reference))
+                    references.Add(reference);
             } // end foreach
             SaveReferences(root, references);
+        } // end method
+
+
+
+        public static void AutoStyle(this Page page, string path) {
+            var sources = page.GetHrefs(path, "*.css");
+            foreach (var source in sources)
+                page.Response.Write("<link href=\"" + source + "\" rel=\"stylesheet\">" + Environment.NewLine);
         } // end method
 
 
@@ -136,6 +137,32 @@ namespace XTools {
 
 
 
+        public static IList<string> GetHrefs(this Page page, string path, string searchPattern = "*.*", bool addTimestamp = true) {
+            var localPath = page.Server.MapPath(path);
+            var files = Directory.EnumerateFiles(localPath, searchPattern, SearchOption.AllDirectories);
+
+            var hrefs = new List<string>();
+            var ignored = GetIgnoredFiles(localPath);
+            var root = page.GetRoot();
+            addTimestamp = addTimestamp && !(Debugger.IsAttached ||
+                page.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
+            foreach (var file in files) {
+                var src = file.Substring(root.Length).Replace('\\', '/');
+                while (src.StartsWith("/"))
+                    src = src.Substring(1);
+                if (IsIgnored(ignored, src))
+                    continue;
+                if (addTimestamp)
+                    src = src + "?" + File.GetLastWriteTime(file);
+                hrefs.Add(src);
+            } // end foreach
+            hrefs.Sort();
+
+            return hrefs;
+        } // end method
+
+
+
         private static IEnumerable<string> GetIgnoredFiles(string localPath) {
             var ignore = new string[0];
             var ignoreFile = Path.Combine(localPath, "_ignore.txt");
@@ -165,12 +192,15 @@ namespace XTools {
 
 
 
-        private static IList<string> GetReferences(string rootPath) {
-            var refFile = Path.Combine(rootPath, "_references.js");
+        private static IList<string> GetReferences(Page page) {
+            var refFile = Path.Combine(page.GetRoot(), "_references.js");
+            string[] lines = null;
             if (!File.Exists(refFile))
                 return null;
+            
+            lock (referencesLock)
+                lines = File.ReadAllLines(refFile);
 
-            var lines = File.ReadAllLines(refFile);
             var references = new List<string>();
             foreach (var line in lines) {
                 var reference = line.Trim();
@@ -185,6 +215,15 @@ namespace XTools {
             } // end foreach
             return references;
         } // end method
+
+
+
+        private static string root;
+        public static string GetRoot(this Page page) {
+            if (page != null)
+                root = root ?? page.MapPath("~");
+            return root;
+        } // end if
 
 
 
@@ -231,7 +270,9 @@ namespace XTools {
             references.Sort();
             var refFile = Path.Combine(rootPath, "_references.js");
             references.Insert(0, "// This file is auto-generated by XTools.WebTool.AutoScript.");
-            File.WriteAllLines(refFile, references);
+            
+            lock (referencesLock)
+                File.WriteAllLines(refFile, references);
         } // end method
 
     } // end class

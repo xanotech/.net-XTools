@@ -19,6 +19,12 @@ namespace XTools {
 
 
 
+        public void Clear() {
+            cache.Clear();
+        } // end method
+
+
+
         public TValue GetValue(TKey key) {
             return GetValue(key, (Func<TValue>)null);
         } // end method
@@ -53,6 +59,12 @@ namespace XTools {
 
         public void PutValue(TKey key, TValue value) {
             cache[key] = value;
+        } // end method
+
+
+
+        public void RemoveValue(TKey key) {
+            cache.TryRemove(key);
         } // end method
 
 

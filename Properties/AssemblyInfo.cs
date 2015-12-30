@@ -5,5 +5,5 @@ using System.Reflection;
 [assembly: AssemblyCopyright("© 2015 Xanotech LLC")]
 [assembly: AssemblyProduct("XTools")]
 
-[assembly: AssemblyFileVersion("1.7")]
-[assembly: AssemblyVersion("1.7")]
+[assembly: AssemblyFileVersion("1.8")]
+[assembly: AssemblyVersion("1.8")]

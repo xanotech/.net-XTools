@@ -17,6 +17,7 @@ namespace XTools {
 
         private static IDictionary<Type, DbType> dbTypeMap = CreateDbTypeMap();
         private static IDictionary<int, OleDbType> oleDbTypeMap = CreateOleDbTypeMap();
+        private static IDictionary<DbType, Type> typeMap = CreateTypeMap();
         private static Cache<string, string> parameterFormatMap = new Cache<string, string>();
 
 
@@ -26,7 +27,7 @@ namespace XTools {
             if (parameter == null) {
                 parameter = cmd.CreateParameter();
                 parameter.ParameterName = name;
-                value = parameter.Set(value);
+                parameter.Set(value);
                 cmd.Parameters.Add(parameter);
             } // end if
 
@@ -34,6 +35,22 @@ namespace XTools {
                 var mirror = Mirror.mirrorCache[parameter.GetType()];
                 var dataType = schemaRow.GetValue<Type>("DataType");
                 if (dataType != null) {
+                    // The following is a hack of sorts.  SQLite (unlike every
+                    // other database) does not have explicit data types for
+                    // its columns.  Thus, the "DataType" in the schema table
+                    // is always "string".  Therefore, instead of setting the
+                    // parameter's type to match that of the schema and
+                    // converting, we just let the type be whatever it was
+                    // set to initially in the first parameter.Set call.
+                    // Unfortunately, the only way apply this behavior is to
+                    // look at the parameter's type name to see if it's Sqlite.
+                    // Its hackish, but because this logic always applies,
+                    // it belongs here.
+                    if (!parameter.GetType().Name.Is("SQLiteParameter")) {
+                        parameter.DbType = dbTypeMap[dataType];
+                        parameter.Set(value, true);
+                    } // end if
+
                     if (dataType.Name == "Decimal") {
                         SetParameterProperty(parameter, "Precision", schemaRow["NumericPrecision"]);
                         SetParameterProperty(parameter, "Scale", schemaRow["NumericScale"]);
@@ -105,7 +122,7 @@ namespace XTools {
             map[typeof(double)] = DbType.Double;
             map[typeof(decimal)] = DbType.Decimal;
             map[typeof(bool)] = DbType.Boolean;
-            map[typeof(char)] = DbType.StringFixedLength;
+            map[typeof(char)] = DbType.String;
             map[typeof(Guid)] = DbType.Guid;
             map[typeof(DateTime)] = DbType.DateTime;
             map[typeof(DateTimeOffset)] = DbType.DateTimeOffset;
@@ -122,7 +139,7 @@ namespace XTools {
             map[typeof(double?)] = DbType.Double;
             map[typeof(decimal?)] = DbType.Decimal;
             map[typeof(bool?)] = DbType.Boolean;
-            map[typeof(char?)] = DbType.StringFixedLength;
+            map[typeof(char?)] = DbType.String;
             map[typeof(Guid?)] = DbType.Guid;
             map[typeof(DateTime?)] = DbType.DateTime;
             map[typeof(DateTimeOffset?)] = DbType.DateTimeOffset;
@@ -139,6 +156,38 @@ namespace XTools {
                 var oleDbType = (OleDbType)field.GetValue(null);
                 map[oleDbType.GetHashCode()] = oleDbType;
             } // end foreach
+            return map;
+        } // end method
+
+
+
+        private static IDictionary<DbType, Type> CreateTypeMap() {
+            var map = new Dictionary<DbType, Type>();
+            map[DbType.AnsiString] = typeof(string);
+            map[DbType.AnsiStringFixedLength] = typeof(string);
+            map[DbType.Currency] = typeof(decimal);
+            map[DbType.String] = typeof(string);
+            map[DbType.Byte] = typeof(byte);
+            map[DbType.SByte] = typeof(sbyte);
+            map[DbType.Int16] = typeof(short);
+            map[DbType.UInt16] = typeof(ushort);
+            map[DbType.Int32] = typeof(int);
+            map[DbType.UInt32] = typeof(uint);
+            map[DbType.Int64] = typeof(long);
+            map[DbType.UInt64] = typeof(ulong);
+            map[DbType.Single] = typeof(float);
+            map[DbType.Double] = typeof(double);
+            map[DbType.Decimal] = typeof(decimal);
+            map[DbType.Boolean] = typeof(bool);
+            map[DbType.StringFixedLength] = typeof(string);
+            map[DbType.Guid] = typeof(Guid);
+            map[DbType.Date] = typeof(DateTime);
+            map[DbType.DateTime] = typeof(DateTime);
+            map[DbType.DateTime2] = typeof(DateTime);
+            map[DbType.DateTimeOffset] = typeof(DateTimeOffset);
+            map[DbType.Binary] = typeof(byte[]);
+            map[DbType.VarNumeric] = typeof(double);
+            map[DbType.Xml] = typeof(string);
             return map;
         } // end method
 
@@ -276,10 +325,16 @@ namespace XTools {
 
 
 
-        public static object Set(this IDbDataParameter parameter, object value) {
+        public static object Set(this IDbDataParameter parameter, object value, bool convert = false) {
             value = value ?? DBNull.Value;
-            parameter.Value = value;
-            parameter.DbType = dbTypeMap[value.GetType()];
+            if (convert) {
+                if (value != DBNull.Value)
+                    value = SystemTool.SmartConvert(value, typeMap[parameter.DbType]);
+                parameter.Value = value;
+            } else {
+                parameter.Value = value;
+                parameter.DbType = dbTypeMap[value.GetType()];
+            } // end if-else
             return value;
         } // end method
 

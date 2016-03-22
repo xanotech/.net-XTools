@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Web;
 using System.Web.Http.Controllers;
@@ -47,8 +48,8 @@ namespace XTools {
 
 
 
-        public static IList GetAllControls(this Control parent) {
-            ArrayList allControls = new ArrayList();
+        public static IEnumerable<Control> GetAllControls(this Control parent) {
+            var allControls = new List<Control>();
             foreach (Control c in parent.Controls) {
                 allControls.Add(c);
                 allControls.AddRange(c.GetAllControls());
@@ -137,38 +138,47 @@ namespace XTools {
 
 
 
-        public static IList<string> GetHrefs(this Page page, string path, string searchPattern = "*.*", bool addTimestamp = true) {
+        public static IEnumerable<string> GetHrefs(this Page page, string path, string searchPattern = "*.*", bool addTimestamp = true) {
             var localPath = page.Server.MapPath(path);
             var files = Directory.EnumerateFiles(localPath, searchPattern, SearchOption.AllDirectories);
 
             var hrefs = new List<string>();
-            var ignored = GetIgnoredFiles(localPath);
+            var ignored = ReadAllLinesSafely(localPath, "_ignore.txt");
+            var ordered = ReadAllLinesSafely(localPath, "_order.txt");
             var root = page.GetRoot();
             addTimestamp = addTimestamp && !(Debugger.IsAttached ||
                 page.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
+            files = files.Select(f => {
+                f = f.Substring(root.Length).Replace('\\', '/');
+                while (f.StartsWith("/"))
+                    f = f.Substring(1);
+                return f;
+            }).OrderBy(f => GetOrder(ordered, f)).ThenBy(f => f);
             foreach (var file in files) {
-                var src = file.Substring(root.Length).Replace('\\', '/');
-                while (src.StartsWith("/"))
-                    src = src.Substring(1);
-                if (IsIgnored(ignored, src))
+                if (IsIgnored(ignored, file))
                     continue;
+
+                var href = file;
                 if (addTimestamp)
-                    src = src + "?" + File.GetLastWriteTime(file);
-                hrefs.Add(src);
+                    href += "?" + File.GetLastWriteTime(file);
+                hrefs.Add(href);
             } // end foreach
-            hrefs.Sort();
 
             return hrefs;
         } // end method
 
 
 
-        private static IEnumerable<string> GetIgnoredFiles(string localPath) {
-            var ignore = new string[0];
-            var ignoreFile = Path.Combine(localPath, "_ignore.txt");
-            if (File.Exists(ignoreFile))
-                ignore = File.ReadAllLines(ignoreFile);
-            return ignore;
+        private static int GetOrder(IEnumerable<string> ordered, string file) {
+            int order = 0;
+            foreach (var ord in ordered) {
+                if (ord == file ||
+                    (ord.StartsWith("*") && file.EndsWith(ord.Substring(1))) ||
+                    (ord.EndsWith("*") && file.StartsWith(ord.Substring(0, ord.Length - 1))))
+                    return order;
+                order++;
+            } // end foreach
+            return order;
         } // end method
 
 
@@ -257,6 +267,16 @@ namespace XTools {
                     (ig.EndsWith("*") && src.StartsWith(ig.Substring(0, ig.Length - 1))))
                     return true;
             return false;
+        } // end method
+
+
+
+        private static IEnumerable<string> ReadAllLinesSafely(string localPath, string filename) {
+            var lines = new string[0];
+            filename = Path.Combine(localPath, filename);
+            if (File.Exists(filename))
+                lines = File.ReadAllLines(filename);
+            return lines;
         } // end method
 
 

@@ -59,7 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="License.txt" />

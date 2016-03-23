@@ -17,8 +17,7 @@ namespace XTools {
 
 
  
-        public void Init(HttpApplication context)
-        {
+        public void Init(HttpApplication context) {
             if (isStarted)
                 return;
 

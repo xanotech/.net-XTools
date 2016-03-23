@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.Http.Controllers;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -59,6 +58,7 @@ namespace XTools {
 
 
 
+        /*
         private static IEnumerable<Assembly> GetBinAssemblies(this IHttpController controller) {
             var assemblies = new List<Assembly>();
             string path = Assembly.GetExecutingAssembly().Location;
@@ -69,6 +69,7 @@ namespace XTools {
                 assemblies.Add(Assembly.LoadFile(dllFilename));
             return assemblies;
         } // end method
+        */
         
         
         

@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -21,11 +20,13 @@ namespace XTools {
 
 
 
-        public static void AutoScript(this Page page, string path) {
-            var references = GetReferences(page);
-            var sources = page.GetHrefs(path, "*.js");
+        public static string AutoScript(string path) {
+            var references = GetReferences();
+            var sources = GetHrefs(path, "*.js");
+            var response = new StringBuilder();
             foreach (var source in sources) {
-                page.Response.Write("<script src=\"" + source + "\"></script>" + Environment.NewLine);
+                response.AppendLine("<script src=\"" + source +
+                    "\"></script>");
 
                 var reference = source;
                 var index = reference.LastIndexOf("?");
@@ -35,14 +36,18 @@ namespace XTools {
                     references.Add(reference);
             } // end foreach
             SaveReferences(root, references);
+            return response.ToString();
         } // end method
 
 
 
-        public static void AutoStyle(this Page page, string path) {
-            var sources = page.GetHrefs(path, "*.css");
+        public static string AutoStyle(string path) {
+            var sources = GetHrefs(path, "*.css");
+            var response = new StringBuilder();
             foreach (var source in sources)
-                page.Response.Write("<link href=\"" + source + "\" rel=\"stylesheet\">" + Environment.NewLine);
+                response.AppendLine("<link href=\"" + source +
+                    "\" rel=\"stylesheet\">");
+            return response.ToString();
         } // end method
 
 
@@ -133,22 +138,22 @@ namespace XTools {
                 cookieValue = cookie.Value;
             } catch {
                 // Do nothying since cookieValue was already set to default value.
-            }
+            } // end try-catch
             return cookieValue;
         } // end method
 
 
 
-        public static IEnumerable<string> GetHrefs(this Page page, string path, string searchPattern = "*.*", bool addTimestamp = true) {
-            var localPath = page.Server.MapPath(path);
+        public static IEnumerable<string> GetHrefs(string path, string searchPattern = "*.*", bool addTimestamp = true) {
+            var localPath = HttpContext.Current.Server.MapPath(path);
             var files = Directory.EnumerateFiles(localPath, searchPattern, SearchOption.AllDirectories);
 
             var hrefs = new List<string>();
             var ignored = ReadAllLinesSafely(localPath, "_ignore.txt");
             var ordered = ReadAllLinesSafely(localPath, "_order.txt");
-            var root = page.GetRoot();
+            var root = GetRoot();
             addTimestamp = addTimestamp && !(Debugger.IsAttached ||
-                page.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
+                HttpContext.Current.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
             files = files.Select(f => {
                 f = f.Substring(root.Length).Replace('\\', '/');
                 while (f.StartsWith("/"))
@@ -203,8 +208,8 @@ namespace XTools {
 
 
 
-        private static IList<string> GetReferences(Page page) {
-            var refFile = Path.Combine(page.GetRoot(), "_references.js");
+        private static IList<string> GetReferences() {
+            var refFile = Path.Combine(GetRoot(), "_references.js");
             string[] lines = null;
             if (!File.Exists(refFile))
                 return null;
@@ -230,10 +235,8 @@ namespace XTools {
 
 
         private static string root;
-        public static string GetRoot(this Page page) {
-            if (page != null)
-                root = root ?? page.MapPath("~");
-            return root;
+        public static string GetRoot() {
+            return (root = root ?? HttpContext.Current.Server.MapPath("~"));
         } // end if
 
 

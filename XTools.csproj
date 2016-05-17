@@ -53,6 +53,7 @@
     <Compile Include="PromiscuousValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SystemTool.cs" />
+    <Compile Include="IWebStartupHandler.cs" />
     <Compile Include="WebStartupModule.cs" />
     <Compile Include="WebTool.cs" />
     <Compile Include="WindowsFormsTool.cs" />

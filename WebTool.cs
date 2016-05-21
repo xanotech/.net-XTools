@@ -154,12 +154,16 @@ namespace XTools {
             var root = GetRoot();
             addTimestamp = addTimestamp && !(Debugger.IsAttached ||
                 HttpContext.Current.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
+
+            // The following replaces blackslashes with front slashes, strips off leading slashes,
+            // and orders the results by GetOrder, directory depth (lower first), and then by name.
             files = files.Select(f => {
                 f = f.Substring(root.Length).Replace('\\', '/');
                 while (f.StartsWith("/"))
                     f = f.Substring(1);
                 return f;
-            }).OrderBy(f => GetOrder(ordered, f)).ThenBy(f => f);
+            }).OrderBy(f => GetOrder(ordered, f)).ThenBy(f => -f.Split('/').Length).ThenBy(f => f);
+
             foreach (var file in files) {
                 if (IsIgnored(ignored, file))
                     continue;

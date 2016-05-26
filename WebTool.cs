@@ -152,7 +152,7 @@ namespace XTools {
             var ignored = ReadAllLinesSafely(localPath, "_ignore.txt");
             var ordered = ReadAllLinesSafely(localPath, "_order.txt");
             var root = GetRoot();
-            addTimestamp = addTimestamp && !(Debugger.IsAttached ||
+            addTimestamp = addTimestamp && !(HttpContext.Current.Request.IsLocal ||
                 HttpContext.Current.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
 
             // The following replaces blackslashes with front slashes, strips off leading slashes,

@@ -155,26 +155,20 @@ namespace XTools {
             addTimestamp = addTimestamp && !(HttpContext.Current.Request.IsLocal ||
                 HttpContext.Current.Request.QueryString.ToString().ToLower().Contains("notimestamp"));
 
-            // The following replaces blackslashes with front slashes, strips off leading slashes,
-            // and orders the results by GetOrder, directory depth (lower first), and then by name.
-            files = files.Select(f => {
-                f = f.Substring(root.Length).Replace('\\', '/');
-                while (f.StartsWith("/"))
-                    f = f.Substring(1);
-                return f;
-            }).OrderBy(f => GetOrder(ordered, f)).ThenBy(f => -f.Split('/').Length).ThenBy(f => f);
-
-            foreach (var file in files) {
-                if (IsIgnored(ignored, file))
-                    continue;
-
-                var href = file;
+            // The following translates files to their href value replacing blackslashes with front slashes,
+            // striping off leading slashes, adding timestamp (if addTimestamp is true), ignoring if IsIgnored,
+            // and then ordering them by GetOrder, directory depth (lower first), and then name by name.
+            return files.Select(f => {
+                var href = f.Substring(root.Length).Replace('\\', '/');
+                while (href.StartsWith("/"))
+                    href = href.Substring(1);
                 if (addTimestamp)
-                    href += "?" + File.GetLastWriteTime(file);
-                hrefs.Add(href);
-            } // end foreach
-
-            return hrefs;
+                    href += "?" + File.GetLastWriteTime(f).Ticks / 10000000;
+                return href;
+            }).Where(x => !IsIgnored(ignored, x))
+            .OrderBy(x => GetOrder(ordered, x))
+            .ThenBy(x => -x.Split('/').Length)
+            .ThenBy(x => x);
         } // end method
 
 
